@@ -24,7 +24,7 @@ scriptings:
 compat_arguments:
   CronExp: "15 8 * * *"
 compat_arguments_desc:
-  CronExp: 签到时间，默认每天 08:15
+  CronExp: "签到时间，默认每天 08:15"
 
 mitm:
   hostnames:
