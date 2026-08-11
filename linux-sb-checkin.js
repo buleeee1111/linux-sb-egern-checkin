@@ -24,6 +24,11 @@ function readCookie(ctx) {
   return readHeader(ctx.request?.headers, "cookie").trim();
 }
 
+function enabled(ctx) {
+  const value = ctx.env?.CaptureCookie ?? ctx.args?.CaptureCookie ?? "true";
+  return String(value).toLowerCase() !== "false";
+}
+
 function getStoredCookie(ctx) {
   try { return String(ctx.storage.get(COOKIE_STORE) || "").trim(); } catch (_) { return ""; }
 }
@@ -51,21 +56,25 @@ function extract(html, pattern) {
 }
 
 async function capture(ctx) {
+  if (!enabled(ctx)) return { ok: true, disabled: true };
   const cookie = readCookie(ctx);
-  if (!cookie || !/(session|auth|token|sid|cf_clearance)/i.test(cookie)) return { ok: false, ignored: true };
+  if (!cookie) return { ok: false, ignored: true };
+  // Only save cookies that look like an authenticated linux.sb session.
+  if (!/(session|auth|token|sid|cf_clearance)/i.test(cookie)) return { ok: false, ignored: true };
+
   const fp = fingerprint(cookie);
   let old = "";
   try { old = String(ctx.storage.get(COOKIE_FP_STORE) || ""); } catch (_) {}
   setStoredCookie(ctx, cookie);
   try { ctx.storage.set(COOKIE_FP_STORE, fp); } catch (_) {}
-  if (fp !== old) await notify(ctx, "linux.sb", "已自动捕获登录 Cookie");
+  if (fp !== old) await notify(ctx, "linux.sb", "已获取 Cookie，自动签到已就绪");
   return { ok: true, changed: fp !== old };
 }
 
 async function checkin(ctx) {
   const cookie = getStoredCookie(ctx);
   if (!cookie) {
-    await notify(ctx, "linux.sb 签到失败", "还没有捕获到登录 Cookie，请先打开 linux.sb 并登录");
+    await notify(ctx, "linux.sb 签到失败", "还没有获取到 Cookie，请打开 linux.sb 并登录");
     return { ok: false, error: "cookie_not_captured" };
   }
   const headers = {
@@ -77,7 +86,7 @@ async function checkin(ctx) {
     const page = await ctx.http.get(CHECKIN_URL, { headers });
     const html = text(page?.body ?? page?.data ?? page);
     if (/登录|登录后|请先登录|Sign in/i.test(html) && !/_csrf/.test(html)) {
-      await notify(ctx, "linux.sb 签到失败", "Cookie 已失效，请重新登录 linux.sb");
+      await notify(ctx, "linux.sb Cookie 过期", "Cookie 已失效，请重新打开 linux.sb 登录");
       return { ok: false, error: "cookie_expired" };
     }
     if (/已签到|已连续签到|今日已签到/.test(html)) {
@@ -106,6 +115,7 @@ async function checkin(ctx) {
 }
 
 export default async function (ctx) {
-  if (ctx.request?.url) return capture(ctx);
+  // HTTP request scripts enter here with ctx.request; schedules do not.
+  if (ctx.request) return capture(ctx);
   return checkin(ctx);
 }
