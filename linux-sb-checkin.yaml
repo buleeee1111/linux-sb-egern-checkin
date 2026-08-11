@@ -8,12 +8,12 @@ scriptings:
   - http_request:
       name: "linux.sb 自动捕获 Cookie"
       match: "^https://(www\\.)?linux\\.sb/"
-      script_url: "https://raw.githubusercontent.com/buleeee1111/linux-sb-egern-checkin/main/linux-sb-checkin.js?v=4"
+      script_url: "https://raw.githubusercontent.com/buleeee1111/linux-sb-egern-checkin/main/linux-sb-checkin.js"
       timeout: 30
       update_interval: 86400
   - schedule:
       name: "linux.sb 每日签到"
       cron: "15 8 * * *"
-      script_url: "https://raw.githubusercontent.com/buleeee1111/linux-sb-egern-checkin/main/linux-sb-checkin.js?v=4"
+      script_url: "https://raw.githubusercontent.com/buleeee1111/linux-sb-egern-checkin/main/linux-sb-checkin.js"
       timeout: 45
       update_interval: 86400
