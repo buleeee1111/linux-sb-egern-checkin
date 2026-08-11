@@ -1,19 +1,38 @@
 name: "linux.sb 每日签到"
-description: "打开 linux.sb 登录后自动捕获 Cookie，并定时签到"
+description: "打开 linux.sb 登录后自动获取 Cookie，并定时签到"
 author: "凡凡"
 homepage: "https://linux.sb/"
 icon: "checkmark.circle.fill"
 
+env_schema:
+  CaptureCookie:
+    name: "获取 Cookie"
+    description: "开启后，打开 linux.sb 并登录时自动保存 Cookie；关闭后不再捕获或覆盖 Cookie"
+    options:
+      - "true"
+      - "false"
+    default_value: "true"
+
 scriptings:
   - http_request:
-      name: "linux.sb 自动捕获 Cookie"
+      name: "linux.sb 自动获取 Cookie"
       match: "^https://(www\\.)?linux\\.sb/"
+      env:
+        CaptureCookie: "{{{CaptureCookie}}}"
       script_url: "https://raw.githubusercontent.com/buleeee1111/linux-sb-egern-checkin/main/linux-sb-checkin.js"
       timeout: 30
       update_interval: 86400
   - schedule:
       name: "linux.sb 每日签到"
       cron: "15 8 * * *"
+      env:
+        CaptureCookie: "{{{CaptureCookie}}}"
       script_url: "https://raw.githubusercontent.com/buleeee1111/linux-sb-egern-checkin/main/linux-sb-checkin.js"
       timeout: 45
       update_interval: 86400
+
+mitm:
+  hostnames:
+    includes:
+      - "linux.sb"
+      - "www.linux.sb"
