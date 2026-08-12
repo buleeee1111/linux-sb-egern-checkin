@@ -1,5 +1,5 @@
 // linux.sb daily check-in for Egern.
-// v2: capture 正则放宽（任何非空 Cookie 都保存，签到失败再报过期）；ctx.http 强 JSON 解析报错翻译为可读提示；env 检查宽容
+// v3: 关闭「获取 Cookie」开关时捕获钩子第一行静默返回（与网易云/微博一致），env 检查统一用 envEnabled
 const BASE = "https://linux.sb";
 const CHECKIN_URL = `${BASE}/daily_checkin`;
 const COOKIE_STORE = "linuxsb.cookie.v1";
@@ -23,11 +23,11 @@ function readCookie(ctx) {
   return readHeader(ctx.request?.headers, "cookie").trim();
 }
 
-// env 检查宽容：只有明确 false 才禁用；{{{...}}} 字面量/空值按开启处理
-function enabled(ctx) {
-  const value = String(ctx.env?.CaptureCookie ?? ctx.args?.CaptureCookie ?? "");
-  if (value === "" || value.includes("{{{")) return true;
-  return value.toLowerCase() !== "false";
+// env 检查宽容（与网易云/微博一致）：只有明确 "false" 才禁用；{{{...}}} 字面量/空值按开启处理
+function envEnabled(ctx, key) {
+  const raw = String(ctx.env?.[key] ?? "");
+  if (raw === "" || raw.includes("{{{")) return true;
+  return raw === "true";
 }
 
 function getStoredCookie(ctx) {
@@ -92,7 +92,10 @@ function extract(html, pattern) {
 }
 
 async function capture(ctx) {
-  if (!enabled(ctx)) return { ok: true, disabled: true };
+  if (!envEnabled(ctx, "CaptureCookie")) {
+    // 关闭「获取 Cookie」：完全静默，不抓、不通知
+    return { ok: true, disabled: true };
+  }
   const cookie = readCookie(ctx);
   if (!cookie) return { ok: false, ignored: true };
   // v2: 不再按关键词过滤，任何非空 Cookie 都保存；签到失败再通知过期
