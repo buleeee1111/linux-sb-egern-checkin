@@ -1,5 +1,5 @@
 // linux.sb daily check-in for Egern.
-// v3: 关闭「获取 Cookie」开关时捕获钩子第一行静默返回（与网易云/微博一致），env 检查统一用 envEnabled
+// v4: 识别 Cloudflare 挑战页（"Just a moment..."），给出明确提示而不是误导性的 "CSRF Token 未找到"（2026-08-17 linux.sb 全站被 CF 拦截）
 const BASE = "https://linux.sb";
 const CHECKIN_URL = `${BASE}/daily_checkin`;
 const COOKIE_STORE = "linuxsb.cookie.v1";
@@ -121,6 +121,11 @@ async function checkin(ctx) {
   };
   try {
     const html = await httpGet(ctx, CHECKIN_URL, headers);
+    // v4: Cloudflare 挑战页识别（linux.sb 2026-08-17 全站开启 CF 防护）
+    if (/Just a moment|challenge-platform|cf-challenge|cf-browser-verification|Checking your browser/i.test(html)) {
+      await notify(ctx, "linux.sb 签到失败", "linux.sb 开启了 Cloudflare 防护，当前无法自动签到。请稍后再试，或先用浏览器打开 linux.sb 访问一次");
+      return { ok: false, error: "cloudflare_blocked" };
+    }
     if (/登录|登录后|请先登录|Sign in/i.test(html) && !/_csrf/.test(html)) {
       await notify(ctx, "linux.sb Cookie 过期", "Cookie 已失效，请重新打开 linux.sb 登录");
       return { ok: false, error: "cookie_expired" };
