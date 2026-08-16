@@ -27,7 +27,7 @@ scriptings:
       match: "^https://(www\\.)?linux\\.sb/"
       env:
         CaptureCookie: "{{{CaptureCookie}}}"
-      script_url: "https://raw.githubusercontent.com/buleeee1111/linux-sb-egern-checkin/main/linux-sb-checkin.js?v=3"
+      script_url: "https://raw.githubusercontent.com/buleeee1111/linux-sb-egern-checkin/main/linux-sb-checkin.js?v=4"
       timeout: 30
       update_interval: 86400
   - schedule:
@@ -35,7 +35,7 @@ scriptings:
       cron: "{{{CronExp}}}"
       env:
         CaptureCookie: "{{{CaptureCookie}}}"
-      script_url: "https://raw.githubusercontent.com/buleeee1111/linux-sb-egern-checkin/main/linux-sb-checkin.js?v=3"
+      script_url: "https://raw.githubusercontent.com/buleeee1111/linux-sb-egern-checkin/main/linux-sb-checkin.js?v=4"
       timeout: 45
       update_interval: 86400
 
